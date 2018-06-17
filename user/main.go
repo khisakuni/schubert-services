@@ -1,19 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
+
+	"github.com/khisakuni/schubert-services/user/v1"
 )
 
 func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "hello world")
-	})
-	n := negroni.Classic()
-	n.UseHandler(router)
-	http.ListenAndServe(":8080", n)
+	app := negroni.Classic()
+	app.UseHandler(route.New())
+	log.Fatal(http.ListenAndServe(":8080", app))
 }
