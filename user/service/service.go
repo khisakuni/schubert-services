@@ -18,8 +18,12 @@ type Service struct {
 	Router *mux.Router
 }
 
-func (s *Service) Run() {
+func (s *Service) Configure() {
 	s.Engine.Use(negroni.HandlerFunc(middleware.WithDB(s.DB)))
+}
+
+func (s *Service) Run() {
+	s.Configure()
 	s.Engine.UseHandler(s.Router)
 	log.Fatal(http.ListenAndServe(s.Port, s.Engine))
 }
