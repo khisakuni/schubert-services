@@ -9,7 +9,7 @@ func New() *mux.Router {
 	router := mux.NewRouter()
 
 	// Add routes
-	router.HandleFunc("/v1/u", createUser).Methods("POST")
+	router.HandleFunc("/api/v1/u", createUser).Methods("POST")
 
 	return router
 }

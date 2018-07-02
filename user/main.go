@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/urfave/negroni"
 
 	"github.com/khisakuni/schubert-services/user/database"
@@ -21,5 +22,7 @@ func main() {
 		Port:   ":8080",
 		Router: route.New(),
 	}
+
+	fmt.Println("Listening on port 8080")
 	service.Run()
 }
