@@ -6,10 +6,10 @@ import (
 )
 
 type User struct {
-	email           string
-	password        string
-	passwordConfirm string
-	username        string
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	PasswordConfirm string `json:"passwordConfirm"`
+	Username        string `json:"username"`
 }
 
 func createUser(w http.ResponseWriter, r *http.Request) {
@@ -19,5 +19,5 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("oh no!"))
 		return
 	}
-	w.Write([]byte(user.email))
+	w.Write([]byte(user.Email))
 }
