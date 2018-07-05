@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 
 	"github.com/khisakuni/schubert-services/user/database"
 	"github.com/khisakuni/schubert-services/user/service"
-	"github.com/khisakuni/schubert-services/user/v1"
 )
 
 func main() {
@@ -20,9 +20,10 @@ func main() {
 		DB:     db,
 		Engine: app,
 		Port:   ":8080",
-		Router: route.New(),
+		Router: mux.NewRouter(),
 	}
 
+	service.Configure()
 	fmt.Println("Listening on port 8080")
 	service.Run()
 }
