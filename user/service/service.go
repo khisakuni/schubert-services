@@ -7,8 +7,6 @@ import (
 	"github.com/urfave/negroni"
 	"log"
 	"net/http"
-
-	"github.com/khisakuni/schubert-services/user/middleware"
 )
 
 type Service struct {
@@ -16,14 +14,15 @@ type Service struct {
 	Engine *negroni.Negroni
 	Port   string
 	Router *mux.Router
+	Auth   Auth
 }
 
 func (s *Service) Configure() {
-	s.Engine.Use(negroni.HandlerFunc(middleware.WithDB(s.DB)))
+	//s.Engine.Use(negroni.HandlerFunc(middleware.WithDB(s.DB)))
+	s.Router.HandleFunc("/api/v1/u", s.createUser).Methods("POST")
+	s.Engine.UseHandler(s.Router)
 }
 
 func (s *Service) Run() {
-	s.Configure()
-	s.Engine.UseHandler(s.Router)
 	log.Fatal(http.ListenAndServe(s.Port, s.Engine))
 }
