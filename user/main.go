@@ -17,6 +17,7 @@ func main() {
 	}
 
 	service := service.Service{
+		Auth:   service.Bcrypt{},
 		DB:     db,
 		Engine: app,
 		Port:   ":8080",

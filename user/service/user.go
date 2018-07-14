@@ -15,53 +15,51 @@ type User struct {
 
 // TODO: Implement better error handling
 
-func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
+func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		w.Write([]byte("oh no!"))
-		return
+		return err
 	}
 
 	// TODO: Robustify
 	if len(user.Email) <= 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Missing email"))
-		return
+		return &handlerError{
+			code:    http.StatusBadRequest,
+			message: "Missing email",
+		}
 	}
 
 	// TODO: Are there other password requirements?
 	if len(user.Password) <= 7 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Password must be at least 8 characters"))
-		return
+		return &handlerError{
+			code:    http.StatusBadRequest,
+			message: "Password must be at least 8 characters",
+		}
 	}
 
 	if user.Password != user.PasswordConfirm {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Passwords don't match"))
-		return
+		return &handlerError{
+			code:    http.StatusBadRequest,
+			message: "Passwords don't match",
+		}
 	}
 
 	if len(user.Username) <= 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Missing username"))
-		return
+		return &handlerError{
+			code:    http.StatusBadRequest,
+			message: "Missing username",
+		}
 	}
 
-	//hashedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	hashedPass, err := s.Auth.HashPassword(user.Password)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oh no!"))
-		return
+		return err
 	}
 
 	tx, err := s.DB.Begin()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oh no!"))
-		return
+		return err
 	}
 
 	sql := `
@@ -69,8 +67,7 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
 	`
 	result, err := tx.Exec(sql, user.Email, user.Username, hashedPass)
 	if err != nil {
-		w.Write([]byte("oh no!"))
-		return
+		return err
 	}
 
 	switch err {
@@ -82,9 +79,7 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
 
 	ID, err := result.LastInsertId()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oh no!"))
-		return
+		return err
 	}
 
 	jsonRes, err := json.Marshal(User{
@@ -93,11 +88,10 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
 		Username: user.Username,
 	})
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("oh no!"))
-		return
+		return err
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(jsonRes)
+	return nil
 }
