@@ -39,7 +39,7 @@ func handleError(handlerFunc handler) http.HandlerFunc {
 				return
 			}
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Something went wrong"))
+			w.Write([]byte(fmt.Sprintf("Something went wrong - %s", err)))
 		}
 	}
 }

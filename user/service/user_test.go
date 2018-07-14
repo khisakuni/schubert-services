@@ -118,8 +118,11 @@ func TestCreateUser(t *testing.T) {
 
 	// Correct params
 	mock.ExpectBegin()
-	mock.ExpectExec("INSERT INTO users").WithArgs("kohei@example.com", "kohei", "password").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectQuery("INSERT INTO users").
+		WithArgs("kohei@example.com", "kohei", "password").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
+
 	p := newParams("kohei@example.com", "password", "kohei")
 	req, err := newRequest("POST", "/api/v1/u", p)
 	res := httptest.NewRecorder()

@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	ID              int64  `json:"id,omitempty"`
+	ID              int    `json:"id,omitempty"`
 	Email           string `json:"email"`
 	Password        string `json:"password,omitempty"`
 	PasswordConfirm string `json:"passwordConfirm,omitempty"`
@@ -15,6 +15,10 @@ type User struct {
 }
 
 const passwordMinLen = 7
+
+// TODO:
+//   - Add more rubst email validation
+//   - Make sure email is unique
 
 func (u *User) validate() error {
 	var message string
@@ -60,10 +64,11 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	var id int
 	sql := `
-		INSERT INTO users (email, username, password) VALUES ($1, $2, $3)
+		INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id
 	`
-	result, err := tx.Exec(sql, user.Email, user.Username, hashedPass)
+	err = tx.QueryRow(sql, user.Email, user.Username, hashedPass).Scan(&id)
 	if err != nil {
 		return err
 	}
@@ -75,13 +80,8 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 		tx.Rollback()
 	}
 
-	ID, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
 	jsonRes, err := json.Marshal(User{
-		ID:       ID,
+		ID:       id,
 		Email:    user.Email,
 		Username: user.Username,
 	})
