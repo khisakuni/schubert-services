@@ -120,7 +120,18 @@ func TestCreateUser(t *testing.T) {
 	if res.Code != 400 {
 		t.Errorf("Expected code 400, got %d\n", res.Code)
 	}
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
 
+	// Password too shart
+	p = newParams("kohei@example.com", "pass", "kohei")
+	req, err = newRequest("POST", "/api/v1/u", p)
+	res = httptest.NewRecorder()
+	s.Router.ServeHTTP(res, req)
+	if res.Code != 400 {
+		t.Errorf("Expected code 400, got %d\n", res.Code)
+	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Error(err)
 	}

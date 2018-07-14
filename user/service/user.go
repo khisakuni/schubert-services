@@ -29,7 +29,7 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Are there other password requirements?
-	if len(user.Password) <= 0 {
+	if len(user.Password) <= 7 {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Missing password"))
 		return
