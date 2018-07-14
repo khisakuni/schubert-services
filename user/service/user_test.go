@@ -18,14 +18,6 @@ func (a MockAuth) HashPassword(password string) (string, error) {
 	return password, nil
 }
 
-// Need to test:
-// - invalid requests
-//   -> response
-//   -> no DB
-// - valid requests
-//   -> response
-//   -> DB
-
 type params struct {
 	Email           string `json:"email"`
 	Password        string `json:"password"`
@@ -57,6 +49,12 @@ func newRequest(method, endpoint string, p params) (*http.Request, error) {
 	return http.NewRequest(method, endpoint, body)
 }
 
+type testCase struct {
+	params
+	code int
+	body string
+}
+
 func TestCreateUser(t *testing.T) {
 	app := negroni.Classic()
 	db, mock, err := sqlmock.New()
@@ -75,74 +73,56 @@ func TestCreateUser(t *testing.T) {
 	}
 	s.Configure()
 
-	// Test invalid requests
-	// Missing email
-	p := newParams("", "password", "kohei")
-	req, err := newRequest("POST", "/api/v1/u", p)
-	res := httptest.NewRecorder()
-	s.Router.ServeHTTP(res, req)
-	if res.Code != 400 {
-		t.Errorf("Expected code 400, got %d\n", res.Code)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
-	}
-
-	// Missing password
-	p = newParams("kohei@example.com", "", "kohei")
-	req, err = newRequest("POST", "/api/v1/u", p)
-	res = httptest.NewRecorder()
-	s.Router.ServeHTTP(res, req)
-	if res.Code != 400 {
-		t.Errorf("Expected code 400, got %d\n", res.Code)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
-	}
-
-	// Missing username
-	p = newParams("kohei@example.com", "password", "")
-	req, err = newRequest("POST", "/api/v1/u", p)
-	res = httptest.NewRecorder()
-	s.Router.ServeHTTP(res, req)
-	if res.Code != 400 {
-		t.Errorf("Expected code 400, got %d\n", res.Code)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
+	tests := []testCase{
+		testCase{
+			params: newParams("", "password", "kohei"),
+			code:   400,
+			body:   "Missing email",
+		},
+		testCase{
+			params: newParams("kohei@example.com", "", "kohei"),
+			code:   400,
+			body:   "Password must be at least 8 characters",
+		},
+		testCase{
+			params: newParams("kohei@example.com", "password", ""),
+			code:   400,
+			body:   "Missing username",
+		},
+		testCase{
+			params: newParams("kohei@example.com", "password", "kohei", "wrong"),
+			code:   400,
+			body:   "Passwords don't match",
+		},
+		testCase{
+			params: newParams("kohei@example.com", "pass", "kohei"),
+			code:   400,
+			body:   "Password must be at least 8 characters",
+		},
 	}
 
-	// Mismatches passwordConfirm
-	p = newParams("kohei@example.com", "password", "kohei", "wrong")
-	req, err = newRequest("POST", "/api/v1/u", p)
-	res = httptest.NewRecorder()
-	s.Router.ServeHTTP(res, req)
-	if res.Code != 400 {
-		t.Errorf("Expected code 400, got %d\n", res.Code)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
-	}
-
-	// Password too shart
-	p = newParams("kohei@example.com", "pass", "kohei")
-	req, err = newRequest("POST", "/api/v1/u", p)
-	res = httptest.NewRecorder()
-	s.Router.ServeHTTP(res, req)
-	if res.Code != 400 {
-		t.Errorf("Expected code 400, got %d\n", res.Code)
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Error(err)
+	for _, test := range tests {
+		req, err := newRequest("POST", "/api/v1/u", test.params)
+		res := httptest.NewRecorder()
+		s.Router.ServeHTTP(res, req)
+		if res.Code != test.code {
+			t.Errorf("Expected code %d, got %d\n", test.code, res.Code)
+		}
+		if res.Body.String() != test.body {
+			t.Errorf("Expected code %s, got %s\n", test.body, res.Body.String())
+		}
+		if err = mock.ExpectationsWereMet(); err != nil {
+			t.Error(err)
+		}
 	}
 
 	// Correct params
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT INTO users").WithArgs("kohei@example.com", "kohei", "password").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
-	p = newParams("kohei@example.com", "password", "kohei")
-	req, err = newRequest("POST", "/api/v1/u", p)
-	res = httptest.NewRecorder()
+	p := newParams("kohei@example.com", "password", "kohei")
+	req, err := newRequest("POST", "/api/v1/u", p)
+	res := httptest.NewRecorder()
 	s.Router.ServeHTTP(res, req)
 	if res.Code != 201 {
 		t.Errorf("Expected code 201, got %d\n", res.Code)

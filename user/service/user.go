@@ -13,6 +13,8 @@ type User struct {
 	Username        string `json:"username"`
 }
 
+// TODO: Implement better error handling
+
 func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -31,7 +33,7 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) {
 	// TODO: Are there other password requirements?
 	if len(user.Password) <= 7 {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Missing password"))
+		w.Write([]byte("Password must be at least 8 characters"))
 		return
 	}
 
