@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -13,7 +14,30 @@ type User struct {
 	Username        string `json:"username"`
 }
 
-// TODO: Implement better error handling
+const passwordMinLen = 7
+
+func (u *User) validate() error {
+	var message string
+	if len(u.Email) <= 0 {
+		message = "Missing email"
+	}
+	if len(u.Username) <= 0 {
+		message = "Missing username"
+	}
+	if len(u.Password) <= passwordMinLen {
+		message = fmt.Sprintf("Password must be at least %d characters", passwordMinLen+1)
+	}
+	if u.Password != u.PasswordConfirm {
+		message = "Passwords don't match"
+	}
+	if message != "" {
+		return &handlerError{
+			code:    http.StatusBadRequest,
+			message: message,
+		}
+	}
+	return nil
+}
 
 func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 	var user User
@@ -22,34 +46,8 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	// TODO: Robustify
-	if len(user.Email) <= 0 {
-		return &handlerError{
-			code:    http.StatusBadRequest,
-			message: "Missing email",
-		}
-	}
-
-	// TODO: Are there other password requirements?
-	if len(user.Password) <= 7 {
-		return &handlerError{
-			code:    http.StatusBadRequest,
-			message: "Password must be at least 8 characters",
-		}
-	}
-
-	if user.Password != user.PasswordConfirm {
-		return &handlerError{
-			code:    http.StatusBadRequest,
-			message: "Passwords don't match",
-		}
-	}
-
-	if len(user.Username) <= 0 {
-		return &handlerError{
-			code:    http.StatusBadRequest,
-			message: "Missing username",
-		}
+	if err := user.validate(); err != nil {
+		return err
 	}
 
 	hashedPass, err := s.Auth.HashPassword(user.Password)
