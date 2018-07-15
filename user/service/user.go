@@ -15,11 +15,13 @@ type User struct {
 	Username        string `json:"username"`
 }
 
-const passwordMinLen = 7
+const (
+	passwordMinLen = 7
+	duplicateError = pq.ErrorCode("23505")
+)
 
 // TODO:
 //   - Add more rubst email validation
-//   - Make sure email is unique
 
 func (u *User) validate() error {
 	var message string
@@ -78,7 +80,7 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if err, ok := err.(*pq.Error); ok {
-		if err.Code == pq.ErrorCode("23505") {
+		if err.Code == duplicateError {
 			return &handlerError{
 				code:    http.StatusBadRequest,
 				message: err.Message,
