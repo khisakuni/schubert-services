@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+	"github.com/lib/pq"
 )
 
 type MockAuth struct{}
@@ -47,6 +49,17 @@ func newRequest(method, endpoint string, p params) (*http.Request, error) {
 		return nil, err
 	}
 	return http.NewRequest(method, endpoint, body)
+}
+
+func sendRequest(t *testing.T, service Service, p params) (int, string) {
+	req, err := newRequest("POST", "/api/v1/u", p)
+	if err != nil {
+		t.Error(err)
+		return 0, ""
+	}
+	res := httptest.NewRecorder()
+	service.Router.ServeHTTP(res, req)
+	return res.Code, res.Body.String()
 }
 
 type testCase struct {
@@ -102,14 +115,12 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		req, err := newRequest("POST", "/api/v1/u", test.params)
-		res := httptest.NewRecorder()
-		s.Router.ServeHTTP(res, req)
-		if res.Code != test.code {
-			t.Errorf("Expected code %d, got %d\n", test.code, res.Code)
+		code, message := sendRequest(t, s, test.params)
+		if code != test.code {
+			t.Errorf("Expected code %d, got %d\n", test.code, code)
 		}
-		if res.Body.String() != test.body {
-			t.Errorf("Expected code %s, got %s\n", test.body, res.Body.String())
+		if message != test.body {
+			t.Errorf("Expected code %s, got %s\n", test.body, message)
 		}
 		if err = mock.ExpectationsWereMet(); err != nil {
 			t.Error(err)
@@ -123,12 +134,9 @@ func TestCreateUser(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
 
-	p := newParams("kohei@example.com", "password", "kohei")
-	req, err := newRequest("POST", "/api/v1/u", p)
-	res := httptest.NewRecorder()
-	s.Router.ServeHTTP(res, req)
-	if res.Code != 201 {
-		t.Errorf("Expected code 201, got %d\n", res.Code)
+	code, message := sendRequest(t, s, newParams("kohei@example.com", "password", "kohei"))
+	if code != 201 {
+		t.Errorf("Expected code 201, got %d\n", code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -146,8 +154,37 @@ func TestCreateUser(t *testing.T) {
 		t.Error(err)
 	}
 
-	if res.Body.String() != string(expectedJson) {
-		t.Errorf("Expected %v but got %v\n", string(expectedJson), res.Body.String())
+	if message != string(expectedJson) {
+		t.Errorf("Expected %v but got %v\n", string(expectedJson), message)
 	}
 
+	// Duplicate email
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT INTO users").
+		WithArgs("kohei@example.com", "kohei", "password").
+		WillReturnError(&pq.Error{
+			Code:    pq.ErrorCode("23505"),
+			Message: "Duplicate email",
+		})
+	mock.ExpectRollback()
+
+	code, _ = sendRequest(t, s, newParams("kohei@example.com", "password", "kohei"))
+	if code != 400 {
+		t.Errorf("Expected 400, got %d\n", code)
+	}
+
+	// Duplicate username
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT INTO users").
+		WithArgs("kohei1@example.com", "kohei", "password").
+		WillReturnError(&pq.Error{
+			Code:    pq.ErrorCode("23505"),
+			Message: "Duplicate username",
+		})
+	mock.ExpectRollback()
+
+	code, _ = sendRequest(t, s, newParams("kohei1@example.com", "password", "kohei"))
+	if code != 400 {
+		t.Errorf("Expected 400, got %d\n", code)
+	}
 }

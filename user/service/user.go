@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lib/pq"
 	"net/http"
 )
 
@@ -69,15 +70,20 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 		INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING id
 	`
 	err = tx.QueryRow(sql, user.Email, user.Username, hashedPass).Scan(&id)
-	if err != nil {
-		return err
-	}
-
 	switch err {
 	case nil:
 		err = tx.Commit()
 	default:
 		tx.Rollback()
+	}
+
+	if err, ok := err.(*pq.Error); ok {
+		if err.Code == pq.ErrorCode("23505") {
+			return &handlerError{
+				code:    http.StatusBadRequest,
+				message: err.Message,
+			}
+		}
 	}
 
 	jsonRes, err := json.Marshal(User{
