@@ -11,7 +11,12 @@ func init() {
 }
 
 func Up00001(tx *sql.Tx) error {
-	_, err := tx.Exec("CREATE TABLE users(id SERIAL PRIMARY KEY NOT NULL, email VARCHAR (255), password VARCHAR (128), username VARCHAR (20));")
+	_, err := tx.Exec(`CREATE TABLE users(
+		id SERIAL PRIMARY KEY NOT NULL,
+		email VARCHAR (255) UNIQUE,
+		password VARCHAR (128),
+		username VARCHAR (20) UNIQUE
+	);`)
 	return err
 }
 
