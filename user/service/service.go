@@ -46,6 +46,7 @@ func handleError(handlerFunc handler) http.HandlerFunc {
 
 func (s *Service) Configure() {
 	s.Router.HandleFunc("/api/v1/u", handleError(s.createUser)).Methods("POST")
+	s.Router.HandleFunc("/api/v1/auth", handleError(s.))
 	s.Engine.UseHandler(s.Router)
 }
 
