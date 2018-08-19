@@ -13,8 +13,7 @@ const (
 )
 
 type config struct {
-	Secret           string `env:"SECRET" envDefault:""`
-	TokenExpireHours int    `env:"TOKEN_EXPIREHOURES" envDefault:1`
+	Secret string `env:"SECRET" envDefault:""`
 }
 
 type claim struct {
