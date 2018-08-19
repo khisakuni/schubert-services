@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	Issuer        = "schubert"
-	ExpireInHours = 1
+	Issuer = "schubert"
 )
 
 type config struct {
-	Secret string `env:"SECRET" envDefault:""`
+	Secret           string `env:"SECRET" envDefault:""`
+	TokenExpireHours int    `env:"TOKEN_EXPIREHOURES" envDefault:1`
 }
 
 type claim struct {
@@ -22,11 +22,11 @@ type claim struct {
 	jwt.StandardClaims
 }
 
-func NewToken(email string) (string, error) {
+func NewToken(email string, expireIn time.Duration) (string, error) {
 	c := claim{
 		Email: email,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expiration(),
+			ExpiresAt: expiration(expireIn),
 			Issuer:    Issuer,
 		},
 	}
@@ -60,8 +60,8 @@ func ParseToken(tokenStr string) (string, error) {
 	return "", errors.New("Invalid token")
 }
 
-func expiration() int64 {
-	return time.Now().Add(time.Hour * ExpireInHours).Unix()
+func expiration(expiresIn time.Duration) int64 {
+	return time.Now().Add(expiresIn).Unix()
 }
 
 func secret() (string, error) {
