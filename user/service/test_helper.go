@@ -8,6 +8,12 @@ import (
 	"testing"
 )
 
+type testCase struct {
+	params interface{}
+	code   int
+	body   string
+}
+
 func newRequest(method, endpoint string, p interface{}) (*http.Request, error) {
 	body := new(bytes.Buffer)
 	err := json.NewEncoder(body).Encode(p)

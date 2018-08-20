@@ -50,12 +50,6 @@ func newParams(email, password, username string, passwordConfirm ...string) para
 // 	return res.Code, res.Body.String()
 // }
 
-type testCase struct {
-	params
-	code int
-	body string
-}
-
 func TestCreateUser(t *testing.T) {
 	app := negroni.Classic()
 	db, mock, err := sqlmock.New()
