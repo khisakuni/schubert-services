@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 
@@ -17,11 +18,11 @@ func main() {
 	}
 
 	service := service.Service{
-		Auth:   service.Bcrypt{},
-		DB:     db,
-		Engine: app,
-		Port:   ":8080",
-		Router: mux.NewRouter(),
+		Authenticator: service.Bcrypt{},
+		DB:            db,
+		Engine:        app,
+		Port:          ":8080",
+		Router:        mux.NewRouter(),
 	}
 
 	service.Configure()

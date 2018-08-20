@@ -3,8 +3,9 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lib/pq"
 	"net/http"
+
+	"github.com/lib/pq"
 )
 
 type User struct {
@@ -57,7 +58,7 @@ func (s *Service) createUser(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	hashedPass, err := s.Auth.HashPassword(user.Password)
+	hashedPass, err := s.Authenticator.HashPassword(user.Password)
 	if err != nil {
 		return err
 	}

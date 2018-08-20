@@ -1,9 +1,30 @@
 package service
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"encoding/json"
+	"net/http"
 
-type Auth interface {
+	"golang.org/x/crypto/bcrypt"
+)
+
+type Authenticator interface {
 	HashPassword(string) (string, error)
+}
+
+type authParams struct {
+	Email    string
+	Password string
+}
+
+func (s *Service) auth(w http.ResponseWriter, r *http.Request) error {
+	var p authParams
+	err := json.NewDecoder(r.Body).Decode(p)
+	if err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
 type Bcrypt struct{}
