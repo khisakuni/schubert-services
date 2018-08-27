@@ -17,6 +17,10 @@ func (a MockAuth) HashPassword(password string) (string, error) {
 	return password, nil
 }
 
+func (a MockAuth) Compare(hashed, password string) error {
+	return nil
+}
+
 type params struct {
 	Email           string `json:"email"`
 	Password        string `json:"password"`
@@ -38,17 +42,6 @@ func newParams(email, password, username string, passwordConfirm ...string) para
 		PasswordConfirm: confirm,
 	}
 }
-
-// func sendRequest(t *testing.T, service Service, p params) (int, string) {
-// 	req, err := newRequest("POST", "/api/v1/u", p)
-// 	if err != nil {
-// 		t.Error(err)
-// 		return 0, ""
-// 	}
-// 	res := httptest.NewRecorder()
-// 	service.Router.ServeHTTP(res, req)
-// 	return res.Code, res.Body.String()
-// }
 
 func TestCreateUser(t *testing.T) {
 	app := negroni.Classic()

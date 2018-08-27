@@ -9,6 +9,7 @@ import (
 )
 
 type testCase struct {
+	before func(*testing.T)
 	params interface{}
 	code   int
 	body   string
