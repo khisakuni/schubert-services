@@ -13,6 +13,6 @@ import (
 func New() (*sql.DB, error) {
 	c := config.DB{}
 	c.Load()
-	dbstring := fmt.Sprintf("user=%s dbname=%s sslmode=%s", c.User, c.Name, c.SSLMode)
+	dbstring := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s password=%s", c.Host, c.User, c.Name, c.SSLMode, c.Password)
 	return sql.Open("postgres", dbstring)
 }

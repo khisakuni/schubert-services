@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 
@@ -20,11 +21,11 @@ func main() {
 		Auth:   service.Bcrypt{},
 		DB:     db,
 		Engine: app,
-		Port:   ":8080",
+		Port:   ":5000",
 		Router: mux.NewRouter(),
 	}
 
 	service.Configure()
-	fmt.Println("Listening on port 8080")
+	fmt.Println("Listening on port 5000")
 	service.Run()
 }

@@ -4,13 +4,14 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	"github.com/pressly/goose"
 
 	"github.com/khisakuni/schubert-services/user/database"
 
 	// Init DB drivers.
-	_ "github.com/lib/pq"
+	// _ "github.com/lib/pq"
 
 	_ "github.com/khisakuni/schubert-services/user/migrations"
 )
@@ -56,8 +57,13 @@ func main() {
 		arguments = append(arguments, args[1:]...)
 	}
 
-	if err := goose.Run(command, db, *dir, arguments...); err != nil {
-		log.Fatalf("goose run: %v", err)
+	retries := 0
+	maxRetries := 3
+	err = goose.Run(command, db, *dir, arguments...)
+	for err != nil && retries <= maxRetries {
+		retries++
+		time.Sleep(7000 * time.Millisecond)
+		err = goose.Run(command, db, *dir, arguments...)
 	}
 }
 
