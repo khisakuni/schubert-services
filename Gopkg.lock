@@ -8,6 +8,12 @@
   version = "v3.3.0"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
@@ -41,6 +47,15 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = [
+    "bcrypt",
+    "blowfish"
+  ]
+  revision = "aabede6cba87e37f413b3e60ebfc214f8eeca1b0"
+
+[[projects]]
   name = "gopkg.in/DATA-DOG/go-sqlmock.v1"
   packages = ["."]
   revision = "d76b18b42f285b792bf985118980ce9eacea9d10"
@@ -49,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4555ecc90d68cd99b5474377e50fea889fe82b2ee21cd4743fc48cc3ac07089c"
+  inputs-digest = "1783f195f4d408b05e27b77137c17c2a7377fbf1c7f8b95828381fcef0ed0f7c"
   solver-name = "gps-cdcl"
   solver-version = 1

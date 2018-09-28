@@ -4,18 +4,19 @@ import (
 	"database/sql"
 
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/urfave/negroni"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/urfave/negroni"
 )
 
 type Service struct {
-	DB     *sql.DB
-	Engine *negroni.Negroni
-	Port   string
-	Router *mux.Router
-	Auth   Auth
+	DB            *sql.DB
+	Engine        *negroni.Negroni
+	Port          string
+	Router        *mux.Router
+	Authenticator Authenticator
 }
 
 type handlerError struct {
@@ -46,6 +47,7 @@ func handleError(handlerFunc handler) http.HandlerFunc {
 
 func (s *Service) Configure() {
 	s.Router.HandleFunc("/api/v1/u", handleError(s.createUser)).Methods("POST")
+	s.Router.HandleFunc("/api/v1/auth", handleError(s.auth)).Methods("POST")
 	s.Engine.UseHandler(s.Router)
 }
 

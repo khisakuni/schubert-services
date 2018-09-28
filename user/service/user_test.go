@@ -1,10 +1,7 @@
 package service
 
 import (
-	"bytes"
 	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -18,6 +15,10 @@ type MockAuth struct{}
 
 func (a MockAuth) HashPassword(password string) (string, error) {
 	return password, nil
+}
+
+func (a MockAuth) Compare(hashed, password string) error {
+	return nil
 }
 
 type params struct {
@@ -42,32 +43,6 @@ func newParams(email, password, username string, passwordConfirm ...string) para
 	}
 }
 
-func newRequest(method, endpoint string, p params) (*http.Request, error) {
-	body := new(bytes.Buffer)
-	err := json.NewEncoder(body).Encode(p)
-	if err != nil {
-		return nil, err
-	}
-	return http.NewRequest(method, endpoint, body)
-}
-
-func sendRequest(t *testing.T, service Service, p params) (int, string) {
-	req, err := newRequest("POST", "/api/v1/u", p)
-	if err != nil {
-		t.Error(err)
-		return 0, ""
-	}
-	res := httptest.NewRecorder()
-	service.Router.ServeHTTP(res, req)
-	return res.Code, res.Body.String()
-}
-
-type testCase struct {
-	params
-	code int
-	body string
-}
-
 func TestCreateUser(t *testing.T) {
 	app := negroni.Classic()
 	db, mock, err := sqlmock.New()
@@ -79,10 +54,10 @@ func TestCreateUser(t *testing.T) {
 
 	// Initialize service
 	s := Service{
-		DB:     db,
-		Engine: app,
-		Router: mux.NewRouter(),
-		Auth:   MockAuth{},
+		DB:            db,
+		Engine:        app,
+		Router:        mux.NewRouter(),
+		Authenticator: MockAuth{},
 	}
 	s.Configure()
 
@@ -115,10 +90,15 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		code, message := sendRequest(t, s, test.params)
-		if code != test.code {
-			t.Errorf("Expected code %d, got %d\n", test.code, code)
+		req, err := newRequest("POST", "/api/v1/u", test.params)
+		if err != nil {
+			t.Error(err)
 		}
+		res := sendRequest(t, s, req)
+		if res.Code != test.code {
+			t.Errorf("Expected code %d, got %d\n", test.code, res.Code)
+		}
+		message := res.Body.String()
 		if message != test.body {
 			t.Errorf("Expected code %s, got %s\n", test.body, message)
 		}
@@ -134,9 +114,13 @@ func TestCreateUser(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
 
-	code, message := sendRequest(t, s, newParams("kohei@example.com", "password", "kohei"))
-	if code != 201 {
-		t.Errorf("Expected code 201, got %d\n", code)
+	req, err := newRequest("POST", "/api/v1/u", newParams("kohei@example.com", "password", "kohei"))
+	if err != nil {
+		t.Error(err)
+	}
+	res := sendRequest(t, s, req)
+	if res.Code != 201 {
+		t.Errorf("Expected code 201, got %d\n", res.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -154,6 +138,7 @@ func TestCreateUser(t *testing.T) {
 		t.Error(err)
 	}
 
+	message := res.Body.String()
 	if message != string(expectedJson) {
 		t.Errorf("Expected %v but got %v\n", string(expectedJson), message)
 	}
@@ -168,9 +153,10 @@ func TestCreateUser(t *testing.T) {
 		})
 	mock.ExpectRollback()
 
-	code, _ = sendRequest(t, s, newParams("kohei@example.com", "password", "kohei"))
-	if code != 400 {
-		t.Errorf("Expected 400, got %d\n", code)
+	req, err = newRequest("POST", "/api/v1/u", newParams("kohei@example.com", "password", "kohei"))
+	res = sendRequest(t, s, req)
+	if res.Code != 400 {
+		t.Errorf("Expected 400, got %d\n", res.Code)
 	}
 
 	// Duplicate username
@@ -183,8 +169,9 @@ func TestCreateUser(t *testing.T) {
 		})
 	mock.ExpectRollback()
 
-	code, _ = sendRequest(t, s, newParams("kohei1@example.com", "password", "kohei"))
-	if code != 400 {
-		t.Errorf("Expected 400, got %d\n", code)
+	req, err = newRequest("POST", "/api/v1/u", newParams("kohei1@example.com", "password", "kohei"))
+	res = sendRequest(t, s, req)
+	if res.Code != 400 {
+		t.Errorf("Expected 400, got %d\n", res.Code)
 	}
 }
